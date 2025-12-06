@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-PT" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zona Leste Staff - Painel Oficial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        black: '#000000',
+                        zinc: {
+                            850: '#1f1f22',
+                            900: '#121212',
+                            950: '#0a0a0a',
+                        }
+                    },
+                    backgroundImage: {
+                        'hero-glow': 'radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0) 50%)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body { background-color: #050505; color: #e4e4e7; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        .glass-card {
+            background-color: #0a0a0a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-image: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+        }
+        .nav-link.active { background: #fff; color: #000; }
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .animate-spin-slow { animation: spin 4s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="font-sans h-screen flex overflow-hidden selection:bg-white selection:text-black">
+
+    <aside class="w-20 lg:w-64 bg-black border-r border-white/10 hidden md:flex flex-col z-20">
+        <div class="p-6 flex items-center justify-center lg:justify-start gap-3 h-20">
+            <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center shrink-0">
+                <i class="fas fa-city text-black text-sm"></i>
+            </div>
+            <span class="font-bold text-lg tracking-tight text-white hidden lg:block">Zona Leste<span class="text-zinc-500">Staff</span></span>
+        </div>
+        
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            <button onclick="switchTab('overview')" id="nav-overview" class="nav-link active w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all group">
+                <i class="fas fa-sitemap w-5 text-center"></i>
+                <span class="hidden lg:block">Visão Geral</span>
+            </button>
+            
+            <button onclick="requestAdminAccess()" id="nav-admin" class="nav-link w-full flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors group border border-dashed border-white/10 mt-2">
+                <i class="fas fa-lock w-5 text-center group-hover:text-white"></i>
+                <span class="hidden lg:block">Gestão Staff</span>
+            </button>
+
+            <div class="pt-8 pb-4 hidden lg:block">
+                <span class="text-[10px] uppercase font-bold text-zinc-600 tracking-widest px-4">Administrativo</span>
+            </div>
+
+            <button onclick="switchTab('rules')" id="nav-rules" class="nav-link w-full flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors group">
+                <i class="fas fa-book-open w-5 text-center group-hover:text-white"></i>
+                <span class="hidden lg:block">Regras & Escala</span>
+            </button>
+            <button onclick="switchTab('payments')" id="nav-payments" class="nav-link w-full flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors group">
+                <i class="fas fa-wallet w-5 text-center group-hover:text-white"></i>
+                <span class="hidden lg:block">Pagamento & Metas</span>
+            </button>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col overflow-hidden relative bg-black">
+        <div class="absolute top-0 left-0 w-full h-96 bg-hero-glow pointer-events-none z-0"></div>
+
+        <header class="h-16 flex items-center justify-between px-8 z-10 sticky top-0 backdrop-blur-sm bg-black/50 border-b border-white/5">
+            <div class="flex items-center gap-4">
+                <div class="flex flex-col">
+                    <h1 class="text-sm font-medium text-zinc-400">Zona Leste Staff</h1>
+                    <span id="page-title" class="text-white font-semibold">Hierarquia & Equipes</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 relative z-10" id="main-content">
+            
+            <!-- ABA OVERVIEW (Compacta) -->
+            <div id="tab-overview" class="fade-in max-w-7xl mx-auto pb-20 relative">
+            </div>
+
+            <!-- ABA ADMIN -->
+            <div id="tab-admin" class="hidden fade-in max-w-4xl mx-auto pb-20">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Gestão de Equipe</h2>
+                    <p class="text-zinc-500 text-sm">Área restrita para coordenação.</p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-8">
+                    <!-- ADICIONAR MEMBRO -->
+                    <div class="glass-card p-6 rounded-xl">
+                        <h3 class="text-lg font-bold text-white mb-4 border-b border-white/10 pb-2">Adicionar Novo Membro</h3>
+                        <form id="addMemberForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] text-zinc-400 mb-1 uppercase font-bold">Setor / Área</label>
+                                <select id="inputSector" class="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-white/30">
+                                    <option value="highCommand">Alta Cúpula</option>
+                                    <option value="illegal_leads">Ilegal (Responsáveis)</option>
+                                    <option value="illegal_members">Ilegal (Membros)</option>
+                                    <option value="legal_leads">Legal (Responsáveis)</option>
+                                    <option value="legal_members">Legal (Membros)</option>
+                                    <option value="mod_leads">Tickets (Responsáveis)</option>
+                                    <option value="mod_members">Tickets (Membros)</option>
+                                    <option value="ss">ScreenShare</option>
+                                    <option value="support">Atendimento em Call</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-zinc-400 mb-1 uppercase font-bold">Nome / ID</label>
+                                <input type="text" id="inputName" placeholder="Ex: Joãozinho" class="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-white/30" required>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-[10px] text-zinc-400 mb-1 uppercase font-bold">Cargo ou Função Específica</label>
+                                <input type="text" id="inputRole" placeholder="Ex: Auxiliar, Policial, Streamer" class="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-white/30">
+                            </div>
+                            <button type="submit" class="md:col-span-2 bg-white text-black font-bold py-2 rounded-lg hover:bg-zinc-200 transition-colors text-sm">
+                                <i class="fas fa-plus-circle mr-2"></i> Adicionar Membro
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- GERENCIAR ESCALA -->
+                    <div class="glass-card p-6 rounded-xl border-l-4 border-indigo-500">
+                        <h3 class="text-lg font-bold text-white mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
+                            <i class="fas fa-calendar-alt text-indigo-500"></i> Gerenciador de Escala
+                        </h3>
+                        <form id="addShiftForm" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                            <select id="shiftDay" class="bg-zinc-900 border border-white/10 rounded-lg p-2 text-sm text-white">
+                                <option value="Segunda-feira">Segunda-feira</option>
+                                <option value="Terça-feira">Terça-feira</option>
+                                <option value="Quarta-feira">Quarta-feira</option>
+                                <option value="Quinta-feira">Quinta-feira</option>
+                                <option value="Sexta-feira">Sexta-feira</option>
+                                <option value="Sábado">Sábado</option>
+                                <option value="Domingo">Domingo</option>
+                            </select>
+                            <input type="text" id="shiftTime" placeholder="Hora (Ex: 15:00)" class="bg-zinc-900 border border-white/10 rounded-lg p-2 text-sm text-white">
+                            <input type="text" id="shiftStaff" placeholder="Staffs (Ex: Rick, Noah)" class="bg-zinc-900 border border-white/10 rounded-lg p-2 text-sm text-white">
+                            <button type="submit" class="md:col-span-3 bg-indigo-600 text-white font-bold py-2 rounded-lg hover:bg-indigo-500 transition-colors text-sm">
+                                Adicionar Turno à Escala
+                            </button>
+                        </form>
+                        
+                        <h4 class="text-[10px] text-zinc-500 uppercase font-bold mb-2">Turnos Atuais</h4>
+                        <div id="adminRosterList" class="space-y-2 max-h-48 overflow-y-auto">
+                            <!-- Lista de turnos admin -->
+                        </div>
+                    </div>
+
+                    <!-- REMOVER MEMBROS -->
+                    <div class="glass-card p-6 rounded-xl">
+                        <h3 class="text-lg font-bold text-white mb-4 border-b border-white/10 pb-2">Gerenciar Membros Atuais</h3>
+                        <div id="adminList" class="space-y-3">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA REGRAS & ESCALA -->
+            <div id="tab-rules" class="hidden fade-in max-w-6xl mx-auto pb-20">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Protocolos & Escala</h2>
+                    <p class="text-zinc-500 text-sm">Regras operacionais e escala de entrevistas.</p>
+                </div>
+
+                <!-- ESCALA SEMANAL (Destaque Compacto) -->
+                <div class="glass-card p-4 rounded-xl mb-8 border border-white/10">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fas fa-calendar-week text-indigo-500"></i> Escala Semanal de Entrevistas
+                    </h3>
+                    <div id="rosterContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <!-- Escala será gerada dinamicamente aqui -->
+                        <div class="col-span-full text-center p-6 border border-dashed border-white/10 rounded-xl text-zinc-500 text-sm">
+                            <i class="fas fa-calendar-times text-xl mb-2"></i>
+                            <p>Nenhuma escala definida.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- PROTOCOLO DE ENTREVISTAS -->
+                    <div class="glass-card p-6 rounded-xl border-l-2 border-indigo-500">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fas fa-clipboard-list text-indigo-500"></i> Protocolo
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="bg-zinc-900/50 p-3 rounded-lg border border-white/5">
+                                <h4 class="text-xs font-bold text-indigo-400 mb-2 uppercase tracking-wider">Horários Oficiais</h4>
+                                <div class="flex justify-between items-center border-b border-white/5 pb-1 mb-1 text-sm">
+                                    <span class="text-zinc-300">Seg-Sex</span>
+                                    <span class="font-mono text-white text-xs bg-indigo-600/20 px-1.5 py-0.5 rounded border border-indigo-500/50">15:00 & 20:00</span>
+                                </div>
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-zinc-300">Sáb-Dom</span>
+                                    <span class="font-mono text-white text-xs bg-indigo-600/20 px-1.5 py-0.5 rounded border border-indigo-500/50">13:00 & 20:00</span>
+                                </div>
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex gap-2 text-zinc-400"><i class="fas fa-ban text-red-500 mt-0.5"></i> <p><strong class="text-white">Proibido fora de hora:</strong> Apenas horários oficiais.</p></div>
+                                <div class="flex gap-2 text-zinc-400"><i class="fas fa-phone-slash text-red-500 mt-0.5"></i> <p><strong class="text-white">Call Fechada:</strong> Fechar sala quando ociosa.</p></div>
+                                <div class="flex gap-2 text-zinc-400"><i class="fas fa-stopwatch text-yellow-500 mt-0.5"></i> <p><strong class="text-white">Tolerância:</strong> 10min para puxar candidatos.</p></div>
+                                <div class="flex gap-2 text-zinc-400"><i class="fas fa-users text-green-500 mt-0.5"></i> <p><strong class="text-white">Obrigatório:</strong> 2 staffs por horário.</p></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CÓDIGO DE CONDUTA -->
+                    <div class="space-y-3">
+                        <div class="glass-card p-4 rounded-xl">
+                            <h3 class="text-sm font-bold text-white mb-2 border-b border-white/10 pb-1">1. Postura</h3>
+                            <p class="text-zinc-400 text-xs">Respeito mútuo obrigatório. Proibido sarcasmo ou ofensas. Imparcialidade total.</p>
+                        </div>
+                        <div class="glass-card p-4 rounded-xl">
+                            <h3 class="text-sm font-bold text-white mb-2 border-b border-white/10 pb-1">2. Poderes</h3>
+                            <p class="text-zinc-400 text-xs">Proibido abuso de Noclip/Godmode. Nunca intervir em RP em andamento, aguardar o fim.</p>
+                        </div>
+                        <div class="glass-card p-4 rounded-xl">
+                            <h3 class="text-sm font-bold text-white mb-2 border-b border-white/10 pb-1">3. Sigilo</h3>
+                            <p class="text-zinc-400 text-xs">Vazamento de logs ou prints internos = <strong>Banimento (Blacklist)</strong>. Venda de voucher = Ban.</p>
+                        </div>
+                        <div class="glass-card p-4 rounded-xl">
+                            <h3 class="text-sm font-bold text-white mb-2 border-b border-white/10 pb-1">4. Atividade</h3>
+                            <p class="text-zinc-400 text-xs">Ausência > 3 dias deve ser justificada. 7 dias sem aviso = Remoção.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA PAGAMENTOS -->
+            <div id="tab-payments" class="hidden fade-in max-w-4xl mx-auto space-y-6">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-white mb-2">Vouchers & Metas</h2>
+                    <p class="text-zinc-500 text-sm">Sistema de recompensa e produtividade.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="glass-card p-4 rounded-xl border-l-4 border-green-500 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-2 opacity-10"><i class="fas fa-chart-line text-6xl text-green-500"></i></div>
+                        <h3 class="text-sm font-bold text-white mb-1">Meta Tickets</h3>
+                        <div class="text-2xl font-bold text-green-400">35 <span class="text-[10px] text-zinc-500 font-normal">/ sem</span></div>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl border-l-4 border-blue-500 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-2 opacity-10"><i class="fas fa-clock text-6xl text-blue-500"></i></div>
+                        <h3 class="text-sm font-bold text-white mb-1">Meta Horas</h3>
+                        <div class="text-2xl font-bold text-blue-400">30h <span class="text-[10px] text-zinc-500 font-normal">/ sem</span></div>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl border-l-4 border-red-500 bg-red-500/5 flex flex-col justify-center">
+                        <h3 class="text-xs font-bold text-white mb-1 flex items-center gap-1"><i class="fas fa-exclamation-circle"></i> Alerta</h3>
+                        <p class="text-zinc-300 text-[10px]">Staffs com <strong>≤ 5 atendimentos</strong> sofrem corte de benefícios.</p>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 rounded-xl border-l-4 border-yellow-500 bg-yellow-500/5">
+                    <h3 class="text-sm font-bold text-white mb-1 flex items-center gap-2">
+                        <i class="fas fa-ticket-alt text-yellow-500"></i> Regra do Voucher
+                    </h3>
+                    <p class="text-zinc-300 text-xs">
+                        Os vouchers são <strong>pessoais e intransferíveis</strong>. É estritamente proibido vender (RMT) ou repassar.
+                    </p>
+                </div>
+
+                <div class="glass-card p-6 rounded-xl relative overflow-hidden">
+                     <div class="absolute top-0 right-0 p-4 opacity-5"><i class="fas fa-dollar-sign text-8xl text-indigo-500"></i></div>
+                     <div class="flex items-center justify-between mb-4 relative z-10">
+                        <h3 class="text-xl font-bold text-white">Tabela Salarial</h3>
+                        <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30">Mensal</span>
+                     </div>
+                     
+                     <div class="space-y-2 relative z-10 text-sm">
+                        <div class="flex justify-between p-2 border-b border-white/5 bg-zinc-900/30 rounded"><span class="text-white font-bold">Admin.G</span><span class="text-white font-bold">$350 <span class="text-green-400 text-[10px] font-normal">+ Bônus</span></span></div>
+                        <div class="flex justify-between p-2 border-b border-white/5 bg-zinc-900/30 rounded"><span class="text-white font-bold">Admin</span><span class="text-white font-bold">$250 <span class="text-green-400 text-[10px] font-normal">+ Bônus</span></span></div>
+                        <div class="flex justify-between p-2 border-b border-white/5 bg-zinc-900/30 rounded"><span class="text-white font-bold">Moderador</span><span class="text-white font-bold">$200 <span class="text-green-400 text-[10px] font-normal">+ Bônus</span></span></div>
+                        <div class="flex justify-between p-2 border-b border-white/5 bg-zinc-900/30 rounded"><span class="text-white font-bold">Suporte</span><span class="text-white font-bold">$150 <span class="text-green-400 text-[10px] font-normal">+ Bônus</span></span></div>
+                        <div class="flex justify-between p-2 border-b border-white/5 bg-zinc-900/30 rounded"><span class="text-white font-bold">Helper</span><span class="text-white font-bold">$100 <span class="text-green-400 text-[10px] font-normal">+ Bônus</span></span></div>
+                     </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const ADMIN_PASSWORD = 'admin';
+
+        const defaultData = {
+            highCommand: [
+                { name: 'Amanda', role: 'Auxiliar Staff', subRole: 'Responsável Streamer', icon: '🎥', color: 'purple' },
+                { name: 'Mabel', role: 'Responsável Staff', subRole: '', icon: '🎀', color: 'white', isMain: true },
+                { name: 'Pietro', role: 'Auxiliar Staff', subRole: 'Resp. Ilegal / Doações', icon: '💀', color: 'red' }
+            ],
+            illegal: {
+                leads: [{name: 'Pietro', role: 'Líder'}, {name: 'Boy', role: 'Líder'}],
+                members: [{name: 'Rick', role: 'Membro'}, {name: 'Rossi', role: 'Membro'}]
+            },
+            legal: {
+                leads: [{name: 'Marcone', role: 'Líder'}, {name: 'Max', role: 'Líder'}],
+                members: [{name: 'Apollo', role: 'Membro'}, {name: 'Vinicios', role: 'Convite'}]
+            },
+            mod: {
+                leads: [{name: 'Rossi', role: 'Responsável'}],
+                members: [
+                    {name: 'Noah', role: 'Analista'},
+                    {name: 'Giovanni', role: 'Analista'},
+                    {name: 'Apollo', role: 'Analista'},
+                    {name: 'Kennedy', role: 'Membro'}
+                ]
+            },
+            ss: [
+                {name: 'Gordao', role: 'Analista SS'}, {name: 'Suaveh', role: 'Analista SS'}, {name: 'Duarte', role: 'Analista SS'}
+            ],
+            support: [
+                {name: 'Rick', role: 'Sup'}, {name: 'Pietro', role: 'Sup'}, 
+                {name: 'Ryan', role: 'Helper'}, {name: 'Boy', role: 'Sup'}, {name: 'Apollo', role: 'Sup'},
+                {name: 'Luan', role: 'Helper'}, {name: 'João', role: 'Helper'}, {name: 'Ramon', role: 'Suporte'}
+            ]
+        };
+
+        const generatedSchedule = [
+            { day: 'Segunda-feira', time: '15:00', staff: 'Ryan, Pietro' },
+            { day: 'Segunda-feira', time: '20:00', staff: 'Luan, Rossi' },
+            { day: 'Terça-feira', time: '15:00', staff: 'João, Rossi' },
+            { day: 'Terça-feira', time: '20:00', staff: 'Luan, Marcone' },
+            { day: 'Quarta-feira', time: '15:00', staff: 'Ryan, Rossi' },
+            { day: 'Quarta-feira', time: '20:00', staff: 'Luan, Marcone' },
+            { day: 'Quinta-feira', time: '15:00', staff: 'João, Pietro' },
+            { day: 'Quinta-feira', time: '20:00', staff: 'Mabel, Rossi' },
+            { day: 'Sexta-feira', time: '15:00', staff: 'João, Rossi' },
+            { day: 'Sexta-feira', time: '20:00', staff: 'Ryan, Marcone' },
+            { day: 'Sábado', time: '13:00', staff: 'Luan, Pietro' },
+            { day: 'Sábado', time: '20:00', staff: 'Ryan, Marcone' },
+            { day: 'Domingo', time: '13:00', staff: 'João, Rossi' },
+            { day: 'Domingo', time: '20:00', staff: 'Luan, Pietro' }
+        ];
+
+        let staffData = JSON.parse(localStorage.getItem('zl_staff_data')) || defaultData;
+        let scheduleData = JSON.parse(localStorage.getItem('zl_schedule_data')) || generatedSchedule;
+
+        function saveData() {
+            localStorage.setItem('zl_staff_data', JSON.stringify(staffData));
+            renderOverview();
+            renderAdminList();
+        }
+
+        function saveSchedule() {
+            localStorage.setItem('zl_schedule_data', JSON.stringify(scheduleData));
+            renderSchedule();
+        }
+
+        async function requestAdminAccess() {
+            const { value: password } = await Swal.fire({
+                title: 'Acesso Restrito',
+                input: 'password',
+                inputLabel: 'Senha de Administração',
+                inputPlaceholder: 'Digite a senha...',
+                confirmButtonColor: '#000',
+                background: '#121212',
+                color: '#fff'
+            });
+
+            if (password === ADMIN_PASSWORD) {
+                switchTab('admin');
+            } else if (password) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Acesso Negado',
+                    text: 'Senha incorreta.',
+                    confirmButtonColor: '#000',
+                    background: '#121212',
+                    color: '#fff'
+                });
+            }
+        }
+
+        function renderOverview() {
+            const container = document.getElementById('tab-overview');
+            
+            let hcHTML = staffData.highCommand.map(m => `
+                <div class="glass-card w-48 p-4 rounded-xl flex flex-col items-center border-t-2 border-${m.color}-500/50 mt-4 ${m.isMain ? 'transform md:-translate-y-2 shadow-lg z-20 bg-zinc-900 border-white/30' : 'order-2'}">
+                    <div class="w-12 h-12 rounded-lg bg-zinc-900 border border-white/10 flex items-center justify-center mb-2 text-xl">${m.icon}</div>
+                    <h3 class="text-base font-bold text-white">${m.name}</h3>
+                    <p class="text-[10px] text-zinc-400 font-medium">${m.role}</p>
+                    ${m.subRole ? `<p class="text-[9px] text-zinc-500 mt-1 uppercase bg-white/5 px-1.5 py-0.5 rounded">${m.subRole}</p>` : ''}
+                </div>
+            `).join('');
+
+            let html = `
+                <section class="text-center relative z-10 mb-8">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 backdrop-blur text-[10px] font-bold tracking-widest uppercase text-zinc-400 mb-4">
+                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> Direção Zona Leste
+                    </div>
+                    <div class="flex flex-col md:flex-row justify-center items-center md:items-start gap-4 flex-wrap">
+                        ${hcHTML}
+                    </div>
+                </section>
+
+                <section class="relative z-10">
+                    <h3 class="text-center text-sm font-bold text-zinc-500 mb-6 uppercase tracking-widest">Gestão Tática & Operacional</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <div class="space-y-3">${renderDeptCard('Ilegal', 'fa-skull', 'red', staffData.illegal.leads, staffData.illegal.members)}</div>
+                        <div class="space-y-3">${renderDeptCard('Legal', 'fa-balance-scale', 'blue', staffData.legal.leads, staffData.legal.members)}</div>
+                        <div class="space-y-3">${renderDeptCard('Tickets', 'fa-gavel', 'green', staffData.mod.leads, staffData.mod.members)}</div>
+                    </div>
+
+                    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="glass-card p-4 rounded-xl border-l-4 border-cyan-500">
+                            <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2"><i class="fas fa-desktop text-cyan-500"></i> ScreenShare (SS)</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${staffData.ss.map(m => `<span class="bg-zinc-900 border border-white/10 px-2 py-1 rounded text-xs text-white">${m.name}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="glass-card p-4 rounded-xl border-l-4 border-orange-500">
+                            <h4 class="font-bold text-white text-sm mb-2 flex items-center gap-2"><i class="fas fa-headset text-orange-500"></i> Atendimento em Call</h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${staffData.support.map(m => `<span class="bg-zinc-900 border border-white/10 px-2 py-1 rounded text-xs text-white">${m.name}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            `;
+            container.innerHTML = html;
+        }
+
+        function renderDeptCard(title, icon, color, leads, members) {
+            return `
+                <div class="glass-card p-3 rounded-xl border-t-2 border-${color}-500 relative">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold text-white text-sm flex items-center gap-2"><i class="fas ${icon} text-${color}-500"></i> ${title}</h4>
+                    </div>
+                    <div class="bg-zinc-900/50 p-2 rounded-lg border border-white/5 mb-2">
+                        <span class="text-[10px] text-zinc-500 block mb-1">Responsáveis</span>
+                        <div class="flex flex-wrap gap-1">
+                            ${leads.map(l => `<span class="text-xs font-bold text-white bg-zinc-800 px-2 py-0.5 rounded">${l.name}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-3 rounded-xl opacity-90">
+                    <h5 class="text-[10px] font-bold text-zinc-500 uppercase mb-2 border-b border-white/5 pb-1">Equipe Operacional</h5>
+                    <div class="space-y-1">
+                        ${members.map(m => `
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-zinc-300 flex items-center gap-2"><span class="w-1.5 h-1.5 bg-${color}-500 rounded-full"></span> ${m.name}</span>
+                                <span class="text-[9px] text-zinc-600">${m.role}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSchedule() {
+            const publicContainer = document.getElementById('rosterContainer');
+            const adminContainer = document.getElementById('adminRosterList');
+            
+            if(!publicContainer || !adminContainer) return;
+
+            let publicHTML = '';
+            let adminHTML = '';
+
+            if (scheduleData.length === 0) {
+                publicHTML = `
+                    <div class="col-span-full text-center p-6 border border-dashed border-white/10 rounded-xl text-zinc-500 text-sm">
+                        <i class="fas fa-calendar-times text-xl mb-1"></i>
+                        <p>Nenhuma escala.</p>
+                    </div>
+                `;
+                adminHTML = `<p class="text-zinc-500 text-xs">Nenhum turno.</p>`;
+            } else {
+                const daysOrder = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"];
+                scheduleData.sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
+
+                const grouped = {};
+                scheduleData.forEach(item => {
+                    if(!grouped[item.day]) grouped[item.day] = [];
+                    grouped[item.day].push(item);
+                });
+
+                Object.keys(grouped).forEach(day => {
+                    publicHTML += `
+                        <div class="glass-card p-3 rounded-xl border-t-2 border-zinc-700">
+                            <h4 class="font-bold text-white text-xs mb-2 uppercase">${day}</h4>
+                            <div class="space-y-1.5 text-xs">
+                                ${grouped[day].map(s => `
+                                    <div class="bg-zinc-900 p-1.5 rounded flex justify-between items-center border border-white/5">
+                                        <span class="text-zinc-400 font-mono text-[10px]">${s.time}</span> 
+                                        <span class="text-white text-right">${s.staff}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                adminHTML = scheduleData.map((s, idx) => `
+                    <div class="flex justify-between items-center bg-zinc-900/50 p-2 rounded border border-white/5 text-xs">
+                        <div>
+                            <span class="text-indigo-400 font-bold uppercase mr-2">${s.day}</span>
+                            <span class="text-white">${s.time}</span>
+                            <span class="text-zinc-500 block ml-1">Staffs: ${s.staff}</span>
+                        </div>
+                        <button onclick="removeShift(${idx})" class="text-red-500 hover:text-red-300 p-1"><i class="fas fa-trash"></i></button>
+                    </div>
+                `).join('');
+            }
+
+            publicContainer.innerHTML = publicHTML;
+            adminContainer.innerHTML = adminHTML;
+        }
+
+        function renderAdminList() {
+            const list = document.getElementById('adminList');
+            if(!list) return; 
+
+            let html = '';
+
+            const generateList = (arr, label, path) => {
+                if(!arr) return '';
+                return `
+                    <div class="mb-3">
+                        <h4 class="text-[10px] font-bold text-zinc-500 uppercase mb-1">${label}</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            ${arr.map((item, idx) => `
+                                <div class="flex justify-between items-center bg-zinc-900/50 p-2 rounded border border-white/5 text-xs">
+                                    <div>
+                                        <span class="text-white font-bold">${item.name}</span>
+                                        <span class="text-zinc-500 block">${item.role || item.subRole || ''}</span>
+                                    </div>
+                                    <button onclick="removeMember('${path}', ${idx})" class="text-red-500 hover:text-red-300 p-1"><i class="fas fa-trash"></i></button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            };
+
+            html += generateList(staffData.highCommand, 'Alta Cúpula', 'highCommand');
+            html += generateList(staffData.illegal.leads, 'Ilegal (Resp)', 'illegal.leads');
+            html += generateList(staffData.illegal.members, 'Ilegal (Membros)', 'illegal.members');
+            html += generateList(staffData.legal.leads, 'Legal (Resp)', 'legal.leads');
+            html += generateList(staffData.legal.members, 'Legal (Membros)', 'legal.members');
+            html += generateList(staffData.mod.leads, 'Tickets (Resp)', 'mod.leads');
+            html += generateList(staffData.mod.members, 'Tickets (Membros)', 'mod.members');
+            html += generateList(staffData.ss, 'ScreenShare', 'ss');
+            html += generateList(staffData.support, 'Atendimento em Call', 'support');
+
+            list.innerHTML = html;
+        }
+
+        const addMemberForm = document.getElementById('addMemberForm');
+        if (addMemberForm) {
+            addMemberForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const sector = document.getElementById('inputSector').value;
+                const name = document.getElementById('inputName').value;
+                const role = document.getElementById('inputRole').value;
+
+                const newItem = { name, role: role || 'Membro' };
+                if(sector === 'highCommand') {
+                    newItem.icon = '👤'; newItem.color = 'gray'; newItem.subRole = role;
+                }
+
+                if (sector === 'highCommand') staffData.highCommand.push(newItem);
+                else if (sector === 'illegal_leads') staffData.illegal.leads.push(newItem);
+                else if (sector === 'illegal_members') staffData.illegal.members.push(newItem);
+                else if (sector === 'legal_leads') staffData.legal.leads.push(newItem);
+                else if (sector === 'legal_members') staffData.legal.members.push(newItem);
+                else if (sector === 'mod_leads') staffData.mod.leads.push(newItem);
+                else if (sector === 'mod_members') staffData.mod.members.push(newItem);
+                else if (sector === 'ss') staffData.ss.push(newItem);
+                else if (sector === 'support') staffData.support.push(newItem);
+
+                saveData();
+                e.target.reset();
+                Swal.fire({
+                    title: 'Sucesso!',
+                    text: `${name} foi adicionado.`,
+                    icon: 'success',
+                    confirmButtonColor: '#000',
+                    background: '#121212',
+                    color: '#fff'
+                });
+            });
+        }
+
+        const addShiftForm = document.getElementById('addShiftForm');
+        if (addShiftForm) {
+            addShiftForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const day = document.getElementById('shiftDay').value;
+                const time = document.getElementById('shiftTime').value;
+                const staff = document.getElementById('shiftStaff').value;
+
+                if (!time || !staff) {
+                    Swal.fire({ icon: 'warning', title: 'Atenção', text: 'Preencha horário e nomes.', background: '#121212', color: '#fff' });
+                    return;
+                }
+
+                scheduleData.push({ day, time, staff });
+                saveSchedule();
+                e.target.reset();
+                
+                const btn = e.target.querySelector('button');
+                const originalText = btn.innerText;
+                btn.innerText = 'Adicionado!';
+                setTimeout(() => btn.innerText = originalText, 1000);
+            });
+        }
+
+        window.removeMember = function(path, index) {
+            const parts = path.split('.');
+            if(parts.length === 1) {
+                staffData[parts[0]].splice(index, 1);
+            } else {
+                staffData[parts[0]][parts[1]].splice(index, 1);
+            }
+            saveData();
+        };
+
+        window.removeShift = function(index) {
+            scheduleData.splice(index, 1);
+            saveSchedule();
+        };
+
+        function switchTab(tabName) {
+            ['overview', 'rules', 'payments', 'admin'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if(el) el.classList.add('hidden');
+            });
+            document.querySelectorAll('.nav-link').forEach(btn => {
+                btn.classList.remove('active', 'bg-white', 'text-black');
+                btn.classList.add('text-zinc-400', 'hover:text-white');
+            });
+
+            const targetTab = document.getElementById(`tab-${tabName}`);
+            if(targetTab) targetTab.classList.remove('hidden');
+            
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            if(activeBtn) {
+                activeBtn.classList.add('active', 'bg-white', 'text-black');
+                activeBtn.classList.remove('text-zinc-400');
+            }
+            
+            const titles = {
+                'overview': 'Hierarquia Zona Leste',
+                'rules': 'Protocolos & Conduta',
+                'payments': 'Pagamento & Benefícios',
+                'admin': 'Gestão de Staff'
+            };
+            const pageTitle = document.getElementById('page-title');
+            if(pageTitle) pageTitle.innerText = titles[tabName] || 'Painel Staff';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+             renderOverview();
+             renderAdminList();
+             renderSchedule();
+        });
+
+    </script>
+</body>
+</html>
